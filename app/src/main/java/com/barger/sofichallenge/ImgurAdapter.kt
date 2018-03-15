@@ -10,15 +10,17 @@ import android.widget.ImageView
 import android.widget.TextView
 import com.squareup.picasso.Picasso
 
-class ImgurAdapter : RecyclerView.Adapter<ImgurViewHolder>() {
+class ImgurAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     private var data = arrayListOf<ImgurViewModel>()
 
     fun addData(vms: List<ImgurViewModel>) {
         Log.d(this.javaClass.simpleName, "Adding ${vms.size} items")
         val start = data.size
-        data.addAll(vms)
-        notifyItemRangeInserted(start, vms.size)
+        data.addAll(start, vms)
+        //think I'm off by one somewhere; will come back to this to get the better
+        //performance
+        notifyDataSetChanged()
     }
 
     fun clearData() {
@@ -27,22 +29,36 @@ class ImgurAdapter : RecyclerView.Adapter<ImgurViewHolder>() {
     }
 
     override fun getItemCount(): Int {
-        return data.size
+        return data.size + 1
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ImgurViewHolder {
-        val view = LayoutInflater.from(parent.context).inflate(R.layout.imgur_item, parent, false)
-        return ImgurViewHolder(view)
+    override fun getItemViewType(position: Int): Int {
+        if (position == data.size) {
+            return VIEW_TYPE_SPINNER
+        }
+        return VIEW_TYPE_IMAGE
     }
 
-    override fun onBindViewHolder(holder: ImgurViewHolder, position: Int) {
-        holder.bindData(data[position])
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        return when(viewType) {
+            VIEW_TYPE_IMAGE -> ImgurViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.imgur_item, parent, false))
+            VIEW_TYPE_SPINNER -> SpinnerViewhHolder(LayoutInflater.from(parent.context).inflate(R.layout.spinner_item, parent, false))
+            else -> throw RuntimeException("Unknown view type: $viewType")
+        }
     }
 
-    override fun getItemId(position: Int): Long {
-        return data[position].id.hashCode().toLong()
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+            if (holder is ImgurViewHolder) {
+                holder.bindData(data[position])
+            }
+    }
+
+    companion object {
+        val VIEW_TYPE_IMAGE = 1
+        val VIEW_TYPE_SPINNER = 2
     }
 }
+
 
 class ImgurViewModel(val link: String,
                      val id: String,
@@ -71,3 +87,5 @@ class ImgurViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
                 .into(imageView)
     }
 }
+
+class SpinnerViewhHolder(itemView: View) : RecyclerView.ViewHolder(itemView)
