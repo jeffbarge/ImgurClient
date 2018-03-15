@@ -49,6 +49,8 @@ class MainActivity : AppCompatActivity() {
         recycler_view.addOnScrollListener(object:RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView?, dx: Int, dy: Int) {
                 super.onScrolled(recyclerView, dx, dy)
+                //we're going to fetch the next page before you get to the end; that way,
+                //you're less likely to ever see the 'loading' spinner
                 if (layoutManager.findLastVisibleItemPosition() >= adapter.itemCount - 10) {
                     fetchResults(++pageNumber, query)
                 }
@@ -84,7 +86,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun handleResults(results: SearchResult) {
         val images = flattenImages(results.data)
-        adapter.addData(images.map { ImgurViewModel(it.link, it.id) })
+        adapter.addData(images.map { ImgurViewModel(it.link, it.id, it.title ?: "", it.description ?: "") })
     }
 
     private fun flattenImages(images: List<Image>) : List<Image> {
