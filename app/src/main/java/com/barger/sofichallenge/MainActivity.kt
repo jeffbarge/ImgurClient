@@ -1,12 +1,13 @@
 package com.barger.sofichallenge
 
+import android.app.SearchManager
+import android.content.Context
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
-import android.text.Editable
-import android.text.TextUtils
-import android.text.TextWatcher
+import android.widget.SearchView
+import android.view.Menu
 import android.view.View
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
@@ -18,7 +19,7 @@ import java.util.concurrent.TimeUnit
 
 class MainActivity : AppCompatActivity() {
 
-    private var disposable = CompositeDisposable()
+    private lateinit var disposable: CompositeDisposable
     private lateinit var textWatchSubscription: Disposable
     private val searchResultsSubject = PublishSubject.create<String>()
     private val adapter = ImgurAdapter()
@@ -30,19 +31,6 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
-        search_text.addTextChangedListener(object:TextWatcher {
-            override fun beforeTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) { }
-
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                when (TextUtils.isEmpty(s)) {
-                    true -> recycler_view.visibility = View.GONE //good time to show instructions or something
-                    false -> searchResultsSubject.onNext(s.toString())
-                }
-            }
-
-            override fun afterTextChanged(p0: Editable?) { }
-        })
 
         recycler_view.adapter = adapter
         val layoutManager = LinearLayoutManager(this)
@@ -57,6 +45,28 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         })
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.options_menu, menu)
+        val searchView = menu?.findItem(R.id.search)?.actionView as SearchView
+        searchView.queryHint = getString(R.string.search_hint)
+        searchView.setOnQueryTextListener(object:SearchView.OnQueryTextListener {
+            override fun onQueryTextChange(query: String?): Boolean {
+                query?.let {
+                    searchResultsSubject.onNext(it)
+                }
+                return true
+            }
+
+            override fun onQueryTextSubmit(query: String?): Boolean {
+                query?.let {
+                    searchResultsSubject.onNext(it)
+                }
+                return true
+            }
+        })
+        return true
     }
 
     private fun createSubscriptions() {
@@ -74,6 +84,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        disposable = CompositeDisposable()
         createSubscriptions()
     }
 
