@@ -8,11 +8,17 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import android.widget.Toast
 import com.squareup.picasso.Picasso
 
 class ImgurAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
+    interface OnImageClickedListener {
+        fun onClicked(url: String, caption: String)
+    }
+
     private var data = arrayListOf<ImgurViewModel>()
+    var onImageClickedListener: OnImageClickedListener? = null
 
     fun addData(vms: List<ImgurViewModel>) {
         Log.d(this.javaClass.simpleName, "Adding ${vms.size} items")
@@ -49,7 +55,11 @@ class ImgurAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
             if (holder is ImgurViewHolder) {
-                holder.bindData(data[position])
+                val vm = data[position]
+                holder.bindData(vm)
+                holder.itemView.setOnClickListener {
+                    onImageClickedListener?.onClicked(vm.link, vm.caption)
+                }
             }
     }
 
