@@ -3,11 +3,14 @@ package com.barger.sofichallenge
 import android.content.Intent
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
+import android.support.v4.app.ActivityOptionsCompat
+import android.support.v4.view.ViewCompat
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.widget.SearchView
 import android.view.Menu
 import android.view.View
+import android.widget.ImageView
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.disposables.Disposable
@@ -32,8 +35,11 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         adapter.onImageClickedListener = object:ImgurAdapter.OnImageClickedListener {
-            override fun onClicked(url: String, caption: String) {
-                startActivity(ImageActivity.createIntent(this@MainActivity, url, caption))
+            override fun onClicked(url: String, caption: String, imageView: ImageView) {
+                val options = ActivityOptionsCompat.makeSceneTransitionAnimation(this@MainActivity,
+                        imageView,
+                        "image_view")
+                startActivity(ImageActivity.createIntent(this@MainActivity, url, caption), options.toBundle())
             }
         }
 
@@ -56,6 +62,7 @@ class MainActivity : AppCompatActivity() {
         menuInflater.inflate(R.menu.options_menu, menu)
         val searchView = menu?.findItem(R.id.search)?.actionView as SearchView
         searchView.queryHint = getString(R.string.search_hint)
+        searchView.isIconified = false
         searchView.setOnQueryTextListener(object:SearchView.OnQueryTextListener {
             override fun onQueryTextChange(query: String?): Boolean {
                 query?.let {

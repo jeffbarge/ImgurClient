@@ -8,6 +8,7 @@ import android.support.v7.app.AppCompatActivity
 import android.text.TextUtils
 import android.view.MenuItem
 import android.view.View
+import android.view.ViewTreeObserver
 import android.view.WindowManager
 import com.squareup.picasso.Picasso
 import kotlinx.android.synthetic.main.activity_image.*

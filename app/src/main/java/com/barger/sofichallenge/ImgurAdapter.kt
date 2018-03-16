@@ -1,5 +1,6 @@
 package com.barger.sofichallenge
 
+import android.os.Build
 import android.support.v7.widget.RecyclerView
 import android.text.TextUtils
 import android.util.Log
@@ -14,7 +15,7 @@ import com.squareup.picasso.Picasso
 class ImgurAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     interface OnImageClickedListener {
-        fun onClicked(url: String, caption: String)
+        fun onClicked(url: String, caption: String, imageView: ImageView)
     }
 
     private var data = arrayListOf<ImgurViewModel>()
@@ -58,7 +59,10 @@ class ImgurAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
                 val vm = data[position]
                 holder.bindData(vm)
                 holder.itemView.setOnClickListener {
-                    onImageClickedListener?.onClicked(vm.link, vm.caption)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                        holder.imageView.transitionName = "image_view"
+                    }
+                    onImageClickedListener?.onClicked(vm.link, vm.caption, holder.imageView)
                 }
             }
     }
@@ -86,7 +90,7 @@ class ImgurViewModel(val link: String,
 }
 
 class ImgurViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-    private val imageView = itemView.findViewById<ImageView>(R.id.image_view)
+    val imageView: ImageView = itemView.findViewById(R.id.image_view)
     private val textView = itemView.findViewById<TextView>(R.id.text_view)
 
     fun bindData(vm: ImgurViewModel) {
