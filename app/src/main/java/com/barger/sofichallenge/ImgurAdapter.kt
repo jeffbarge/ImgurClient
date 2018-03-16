@@ -1,6 +1,8 @@
 package com.barger.sofichallenge
 
 import android.os.Build
+import android.os.Parcel
+import android.os.Parcelable
 import android.support.v7.widget.RecyclerView
 import android.text.TextUtils
 import android.util.Log
@@ -18,7 +20,9 @@ class ImgurAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         fun onClicked(url: String, caption: String, imageView: ImageView)
     }
 
-    private var data = arrayListOf<ImgurViewModel>()
+    var data = arrayListOf<ImgurViewModel>()
+        private set
+
     var onImageClickedListener: OnImageClickedListener? = null
 
     fun addData(vms: List<ImgurViewModel>) {
@@ -77,7 +81,12 @@ class ImgurAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 class ImgurViewModel(val link: String,
                      val id: String,
                      val title: String,
-                     val description: String) {
+                     val description: String) : Parcelable {
+    private constructor(parcel: Parcel) : this(link = parcel.readString(),
+            id = parcel.readString(),
+            title = parcel.readString(),
+            description = parcel.readString())
+
     val caption: String
         get() {
             if (!TextUtils.isEmpty(title)) {
@@ -87,6 +96,25 @@ class ImgurViewModel(val link: String,
             }
             return ""
         }
+
+    override fun writeToParcel(parcel: Parcel?, p1: Int) {
+        parcel?.apply {
+            writeString(link)
+            writeString(id)
+            writeString(title)
+            writeString(description)
+        }
+    }
+
+    override fun describeContents(): Int = 0
+
+    companion object {
+        @JvmField val CREATOR = object:Parcelable.Creator<ImgurViewModel> {
+            override fun createFromParcel(parcel: Parcel): ImgurViewModel = ImgurViewModel(parcel)
+
+            override fun newArray(size: Int): Array<ImgurViewModel?> = arrayOfNulls(size)
+        }
+    }
 }
 
 class ImgurViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {

@@ -1,12 +1,11 @@
 package com.barger.sofichallenge
 
-import android.content.Intent
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.support.v4.app.ActivityOptionsCompat
-import android.support.v4.view.ViewCompat
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
+import android.text.TextUtils
 import android.widget.SearchView
 import android.view.Menu
 import android.view.View
@@ -21,7 +20,7 @@ import java.util.concurrent.TimeUnit
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var disposable: CompositeDisposable
+    private lateinit var disposable: Disposable
     private lateinit var textWatchSubscription: Disposable
     private val searchResultsSubject = PublishSubject.create<String>()
     private val adapter = ImgurAdapter()
@@ -33,6 +32,20 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        savedInstanceState?.apply {
+            adapter.clearData()
+            val data = getParcelableArrayList<ImgurViewModel>(KEY_IMAGES)
+            if (!data.isEmpty()) {
+                adapter.addData(data)
+                recycler_view.visibility = View.VISIBLE
+            }
+            query = getString(KEY_QUERY)
+            pageNumber = getInt(KEY_PAGE_NUMBER)
+            if (getBoolean(KEY_REQUERY)) {
+                fetchResults(pageNumber, query)
+            }
+        }
 
         adapter.onImageClickedListener = object:ImgurAdapter.OnImageClickedListener {
             override fun onClicked(url: String, caption: String, imageView: ImageView) {
@@ -58,11 +71,24 @@ class MainActivity : AppCompatActivity() {
         })
     }
 
+    override fun onSaveInstanceState(outState: Bundle?) {
+        super.onSaveInstanceState(outState)
+        outState?.apply {
+            putParcelableArrayList(KEY_IMAGES, adapter.data)
+            putString(KEY_QUERY, query)
+            putInt(KEY_PAGE_NUMBER, pageNumber)
+            putBoolean(KEY_REQUERY, fetching)
+        }
+    }
+
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.options_menu, menu)
         val searchView = menu?.findItem(R.id.search)?.actionView as SearchView
         searchView.queryHint = getString(R.string.search_hint)
         searchView.isIconified = false
+        if (!TextUtils.isEmpty(query)) {
+            searchView.setQuery(query, false)
+        }
         searchView.setOnQueryTextListener(object:SearchView.OnQueryTextListener {
             override fun onQueryTextChange(query: String?): Boolean {
                 query?.let {
@@ -78,6 +104,7 @@ class MainActivity : AppCompatActivity() {
                 return true
             }
         })
+
         return true
     }
 
@@ -113,8 +140,9 @@ class MainActivity : AppCompatActivity() {
         fetching = true
         query = q
         pageNumber = page
+        disposable.dispose()
 
-        disposable.add(imgurService.searchImages(page, query)
+        disposable = (imgurService.searchImages(page, query)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
@@ -142,5 +170,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun handleError(error: Throwable) {
         fetching = false
+    }
+
+    companion object {
+        val KEY_IMAGES = "key_images"
+        val KEY_QUERY = "key_query"
+        val KEY_PAGE_NUMBER = "key_page_number"
+        val KEY_REQUERY = "key_requery"
     }
 }
